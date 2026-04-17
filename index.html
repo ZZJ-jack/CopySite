@@ -1,1238 +1,732 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>云剪贴板</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<script src="https://cdn.tailwindcss.com"></script>
-<script>
-tailwindcss.config = {
-  theme: {
-    extend: {
-      fontFamily: {
-        display: ['Space Grotesk', 'Noto Sans SC', 'sans-serif'],
-        body: ['Noto Sans SC', 'sans-serif'],
-      }
-    }
-  }
-}
-</script>
-<style>
-  :root {
-    --bg: #0c0a09;
-    --bg-card: #1c1917;
-    --bg-card-hover: #292524;
-    --fg: #fafaf9;
-    --fg-muted: #a8a29e;
-    --accent: #f59e0b;
-    --accent-dim: rgba(245, 158, 11, 0.15);
-    --accent-glow: rgba(245, 158, 11, 0.3);
-    --border: #44403c;
-    --danger: #ef4444;
-    --success: #22c55e;
-  }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    background: var(--bg);
-    color: var(--fg);
-    font-family: 'Noto Sans SC', sans-serif;
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  /* 背景动画 */
-  .bg-scene {
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    overflow: hidden;
-  }
-
-  .bg-blob {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(120px);
-    opacity: 0.4;
-    animation: blobFloat 20s ease-in-out infinite;
-  }
-
-  .bg-blob:nth-child(1) {
-    width: 500px; height: 500px;
-    background: radial-gradient(circle, rgba(245,158,11,0.25), transparent 70%);
-    top: -10%; left: -10%;
-    animation-delay: 0s;
-  }
-
-  .bg-blob:nth-child(2) {
-    width: 400px; height: 400px;
-    background: radial-gradient(circle, rgba(217,119,6,0.2), transparent 70%);
-    bottom: -10%; right: -5%;
-    animation-delay: -7s;
-    animation-duration: 25s;
-  }
-
-  .bg-blob:nth-child(3) {
-    width: 300px; height: 300px;
-    background: radial-gradient(circle, rgba(251,191,36,0.15), transparent 70%);
-    top: 50%; left: 60%;
-    animation-delay: -14s;
-    animation-duration: 18s;
-  }
-
-  @keyframes blobFloat {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    25% { transform: translate(60px, -40px) scale(1.1); }
-    50% { transform: translate(-30px, 60px) scale(0.95); }
-    75% { transform: translate(40px, 30px) scale(1.05); }
-  }
-
-  /* 网格背景 */
-  .bg-grid {
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    background-image:
-      linear-gradient(rgba(245,158,11,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(245,158,11,0.03) 1px, transparent 1px);
-    background-size: 60px 60px;
-    mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, black 20%, transparent 100%);
-  }
-
-  /* 主容器 */
-  .main-wrap {
-    position: relative;
-    z-index: 1;
-    max-width: 680px;
-    margin: 0 auto;
-    padding: 2rem 1.25rem 4rem;
-  }
-
-  /* 标签切换 */
-  .tab-bar {
-    display: flex;
-    gap: 4px;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 5px;
-    margin-bottom: 2rem;
-  }
-
-  .tab-btn {
-    flex: 1;
-    padding: 0.65rem 0.5rem;
-    border: none;
-    border-radius: 10px;
-    background: transparent;
-    color: var(--fg-muted);
-    font-family: inherit;
-    font-size: 0.9rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-  }
-
-  .tab-btn:hover { color: var(--fg); background: var(--bg-card-hover); }
-
-  .tab-btn.active {
-    background: var(--accent);
-    color: #0c0a09;
-    font-weight: 700;
-    box-shadow: 0 4px 20px var(--accent-glow);
-  }
-
-  .tab-btn i { font-size: 0.85rem; }
-
-  /* 卡片 */
-  .card {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 18px;
-    padding: 2rem;
-    position: relative;
-    overflow: hidden;
-    animation: cardIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  @keyframes cardIn {
-    from { opacity: 0; transform: translateY(16px) scale(0.98); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
-  }
-
-  .card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, var(--accent), transparent);
-    opacity: 0.6;
-  }
-
-  .card-title {
-    font-family: 'Space Grotesk', 'Noto Sans SC', sans-serif;
-    font-size: 1.35rem;
-    font-weight: 700;
-    margin-bottom: 0.35rem;
-    letter-spacing: -0.02em;
-  }
-
-  .card-desc {
-    color: var(--fg-muted);
-    font-size: 0.85rem;
-    margin-bottom: 1.75rem;
-    line-height: 1.5;
-  }
-
-  /* 表单元素 */
-  .field { margin-bottom: 1.25rem; }
-
-  .field-label {
-    display: block;
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--fg-muted);
-    margin-bottom: 0.45rem;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-  }
-
-  .field-input {
-    width: 100%;
-    padding: 0.75rem 1rem;
-    background: var(--bg);
-    border: 1.5px solid var(--border);
-    border-radius: 10px;
-    color: var(--fg);
-    font-family: inherit;
-    font-size: 0.95rem;
-    transition: all 0.25s;
-    outline: none;
-  }
-
-  .field-input::placeholder { color: #57534e; }
-
-  .field-input:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--accent-dim);
-  }
-
-  textarea.field-input {
-    resize: vertical;
-    min-height: 130px;
-    line-height: 1.6;
-  }
-
-  /* 密码字段容器 */
-  .pwd-wrap {
-    position: relative;
-  }
-
-  .pwd-wrap .field-input {
-    padding-right: 2.75rem;
-  }
-
-  .pwd-toggle {
-    position: absolute;
-    right: 0.75rem;
-    top: 50%;
-    transform: translateY(-50%);
-    background: none;
-    border: none;
-    color: var(--fg-muted);
-    cursor: pointer;
-    font-size: 0.95rem;
-    padding: 4px;
-    transition: color 0.2s;
-  }
-
-  .pwd-toggle:hover { color: var(--accent); }
-
-  /* 加密提示 */
-  .encrypt-hint {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.78rem;
-    color: var(--fg-muted);
-    margin-top: 0.4rem;
-  }
-
-  .encrypt-hint i { color: var(--accent); font-size: 0.7rem; }
-
-  /* 按钮 */
-  .btn-primary {
-    width: 100%;
-    padding: 0.85rem;
-    border: none;
-    border-radius: 12px;
-    background: var(--accent);
-    color: #0c0a09;
-    font-family: inherit;
-    font-size: 1rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .btn-primary:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 24px var(--accent-glow);
-  }
-
-  .btn-primary:active { transform: translateY(0) scale(0.99); }
-
-  .btn-primary:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none !important;
-    box-shadow: none !important;
-  }
-
-  .btn-primary .spinner {
-    width: 18px; height: 18px;
-    border: 2.5px solid rgba(12,10,9,0.2);
-    border-top-color: #0c0a09;
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-    display: none;
-  }
-
-  .btn-primary.loading .spinner { display: block; }
-  .btn-primary.loading .btn-text { display: none; }
-
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .btn-danger {
-    background: var(--danger);
-  }
-
-  .btn-danger:hover {
-    box-shadow: 0 6px 24px rgba(239, 68, 68, 0.3);
-  }
-
-  /* 结果展示 */
-  .result-box {
-    margin-top: 1.5rem;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    overflow: hidden;
-    animation: cardIn 0.35s ease;
-  }
-
-  .result-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid var(--border);
-    background: rgba(245,158,11,0.05);
-  }
-
-  .result-header-left {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--accent);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .result-copy-btn {
-    background: none;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    color: var(--fg-muted);
-    font-size: 0.78rem;
-    padding: 0.3rem 0.7rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    transition: all 0.2s;
-    font-family: inherit;
-  }
-
-  .result-copy-btn:hover {
-    color: var(--accent);
-    border-color: var(--accent);
-  }
-
-  .result-content {
-    padding: 1rem;
-    font-size: 0.92rem;
-    line-height: 1.7;
-    white-space: pre-wrap;
-    word-break: break-all;
-    color: var(--fg);
-    max-height: 320px;
-    overflow-y: auto;
-  }
-
-  .result-content::-webkit-scrollbar { width: 5px; }
-  .result-content::-webkit-scrollbar-track { background: transparent; }
-  .result-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
-
-  /* 保护标签 */
-  .protected-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-    font-size: 0.72rem;
-    font-weight: 600;
-    padding: 0.2rem 0.6rem;
-    border-radius: 20px;
-    background: var(--accent-dim);
-    color: var(--accent);
-  }
-
-  .protected-badge.no {
-    background: rgba(34,197,94,0.12);
-    color: var(--success);
-  }
-
-  /* Toast 通知 */
-  .toast-container {
-    position: fixed;
-    top: 1.5rem;
-    right: 1.5rem;
-    z-index: 9999;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .toast {
-    padding: 0.85rem 1.25rem;
-    border-radius: 12px;
-    font-size: 0.88rem;
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    animation: toastIn 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 8px 30px rgba(0,0,0,0.4);
-    max-width: 380px;
-    backdrop-filter: blur(12px);
-  }
-
-  .toast.success {
-    background: rgba(22,101,52,0.9);
-    color: #bbf7d0;
-    border: 1px solid rgba(34,197,94,0.3);
-  }
-
-  .toast.error {
-    background: rgba(127,29,29,0.9);
-    color: #fecaca;
-    border: 1px solid rgba(239,68,68,0.3);
-  }
-
-  .toast.info {
-    background: rgba(120,53,15,0.9);
-    color: #fde68a;
-    border: 1px solid rgba(245,158,11,0.3);
-  }
-
-  .toast.leaving {
-    animation: toastOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-  }
-
-  @keyframes toastIn {
-    from { opacity: 0; transform: translateX(40px) scale(0.95); }
-    to { opacity: 1; transform: translateX(0) scale(1); }
-  }
-
-  @keyframes toastOut {
-    to { opacity: 0; transform: translateX(40px) scale(0.95); }
-  }
-
-  /* 删除确认 */
-  .confirm-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 1000;
-    background: rgba(0,0,0,0.6);
-    backdrop-filter: blur(6px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    animation: fadeIn 0.2s ease;
-    padding: 1rem;
-  }
-
-  .confirm-box {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 18px;
-    padding: 2rem;
-    max-width: 400px;
-    width: 100%;
-    text-align: center;
-    animation: cardIn 0.3s ease;
-  }
-
-  .confirm-icon {
-    width: 56px; height: 56px;
-    border-radius: 50%;
-    background: rgba(239,68,68,0.12);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 1.25rem;
-    font-size: 1.4rem;
-    color: var(--danger);
-  }
-
-  .confirm-title {
-    font-size: 1.15rem;
-    font-weight: 700;
-    margin-bottom: 0.5rem;
-  }
-
-  .confirm-desc {
-    font-size: 0.85rem;
-    color: var(--fg-muted);
-    margin-bottom: 1.75rem;
-    line-height: 1.5;
-  }
-
-  .confirm-actions {
-    display: flex;
-    gap: 0.75rem;
-  }
-
-  .confirm-actions button {
-    flex: 1;
-    padding: 0.7rem;
-    border-radius: 10px;
-    border: none;
-    font-family: inherit;
-    font-size: 0.9rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .btn-cancel {
-    background: var(--bg);
-    color: var(--fg-muted);
-    border: 1px solid var(--border) !important;
-  }
-
-  .btn-cancel:hover { color: var(--fg); border-color: var(--fg-muted) !important; }
-
-  .btn-confirm-delete {
-    background: var(--danger);
-    color: white;
-  }
-
-  .btn-confirm-delete:hover { box-shadow: 0 4px 16px rgba(239,68,68,0.3); }
-
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-
-  /* 粒子画布 */
-  #particles {
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-  }
-
-  /* 页头 */
-  .page-header {
-    text-align: center;
-    margin-bottom: 2.5rem;
-    padding-top: 1rem;
-  }
-
-  .page-logo {
-    width: 56px; height: 56px;
-    border-radius: 16px;
-    background: linear-gradient(135deg, var(--accent), #d97706);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    color: #0c0a09;
-    margin-bottom: 1.25rem;
-    box-shadow: 0 8px 32px var(--accent-glow);
-    animation: logoPulse 3s ease-in-out infinite;
-  }
-
-  @keyframes logoPulse {
-    0%, 100% { box-shadow: 0 8px 32px var(--accent-glow); }
-    50% { box-shadow: 0 8px 48px rgba(245,158,11,0.4); }
-  }
-
-  .page-title {
-    font-family: 'Space Grotesk', 'Noto Sans SC', sans-serif;
-    font-size: 2rem;
-    font-weight: 700;
-    letter-spacing: -0.03em;
-    background: linear-gradient(135deg, var(--fg) 40%, var(--accent));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin-bottom: 0.4rem;
-  }
-
-  .page-subtitle {
-    color: var(--fg-muted);
-    font-size: 0.88rem;
-    font-weight: 300;
-  }
-
-  /* 面板切换 */
-  .panel { display: none; }
-  .panel.active { display: block; }
-
-  /* 空结果提示 */
-  .empty-state {
-    text-align: center;
-    padding: 2rem 1rem;
-    color: var(--fg-muted);
-  }
-
-  .empty-state i {
-    font-size: 2.5rem;
-    margin-bottom: 0.75rem;
-    opacity: 0.3;
-  }
-
-  .empty-state p {
-    font-size: 0.85rem;
-  }
-
-  /* 分割线 */
-  .divider {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin: 1.25rem 0;
-    color: var(--fg-muted);
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-  }
-
-  .divider::before, .divider::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-  }
-
-  /* 统计信息 */
-  .stat-row {
-    display: flex;
-    gap: 0.75rem;
-    margin-top: 1rem;
-  }
-
-  .stat-chip {
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    font-size: 0.75rem;
-    color: var(--fg-muted);
-    background: var(--bg);
-    padding: 0.3rem 0.65rem;
-    border-radius: 8px;
-    border: 1px solid var(--border);
-  }
-
-  .stat-chip i { font-size: 0.65rem; }
-
-  /* 响应式 */
-  @media (max-width: 480px) {
-    .main-wrap { padding: 1.25rem 1rem 3rem; }
-    .card { padding: 1.5rem; border-radius: 14px; }
-    .page-title { font-size: 1.6rem; }
-    .tab-btn { font-size: 0.82rem; padding: 0.55rem 0.35rem; }
-    .confirm-actions { flex-direction: column; }
-  }
-
-  /* 减少动效 */
-  @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
-      animation-duration: 0.01ms !important;
-      transition-duration: 0.01ms !important;
-    }
-  }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>云剪贴板 · 密码保护</title>
+    <!-- 简洁风格，参考 spy.zzjjack.us.kg 的极简设计 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f4f6fa;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            color: #1e1f2a;
+        }
+
+        .container {
+            max-width: 1300px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        /* 头部 */
+        .header {
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .title-section h1 {
+            font-weight: 600;
+            font-size: 2rem;
+            letter-spacing: -0.02em;
+            color: #0b0c14;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .badge {
+            background: #e6e9f0;
+            padding: 4px 10px;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #2c3e5c;
+            margin-left: 10px;
+        }
+
+        .api-tag {
+            background: #ffffffd0;
+            backdrop-filter: blur(4px);
+            padding: 6px 16px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+            border: 1px solid #e2e8f0;
+            color: #2c3e5c;
+        }
+
+        .api-tag code {
+            background: #edf2f7;
+            padding: 3px 8px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            margin-left: 6px;
+            color: #0f1825;
+        }
+
+        /* 提示条 */
+        .toast-message {
+            background: #ffffff;
+            border-radius: 60px;
+            padding: 0.8rem 1.5rem;
+            margin-bottom: 1.8rem;
+            box-shadow: 0 8px 20px -6px rgba(0, 20, 50, 0.08);
+            border: 1px solid #eef2f6;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 0.95rem;
+            transition: all 0.15s;
+        }
+
+        .message-content {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .message-content i {
+            font-size: 1.2rem;
+        }
+
+        .toast-error {
+            background: #fff8f8;
+            border-left: 5px solid #e5484d;
+            color: #b91c1c;
+        }
+
+        .toast-success {
+            background: #f2fcf5;
+            border-left: 5px solid #2b9c5c;
+            color: #14643e;
+        }
+
+        .clear-message-btn {
+            background: none;
+            border: none;
+            font-size: 1.4rem;
+            cursor: pointer;
+            opacity: 0.5;
+            padding: 0 5px;
+            color: inherit;
+        }
+
+        /* 卡片网格 */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: 1.1fr 1fr;
+            gap: 1.8rem;
+        }
+
+        @media (max-width: 800px) {
+            .cards-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            body { padding: 1rem; }
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 28px;
+            padding: 1.8rem 1.8rem 2rem;
+            box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.06), 0 4px 10px rgba(0,0,0,0.02);
+            border: 1px solid #f0f3f8;
+            transition: transform 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 1.6rem;
+        }
+
+        .card-header h2 {
+            font-weight: 600;
+            font-size: 1.5rem;
+            letter-spacing: -0.02em;
+            color: #151a24;
+        }
+
+        .icon-bg {
+            background: #eef3fe;
+            width: 36px;
+            height: 36px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: #3a4659;
+            letter-spacing: -0.01em;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 12px 16px;
+            font-family: 'Inter', monospace;
+            font-size: 0.95rem;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 18px;
+            background: #fafcff;
+            transition: border 0.15s, box-shadow 0.15s;
+            outline: none;
+            resize: vertical;
+        }
+
+        textarea {
+            min-height: 110px;
+            line-height: 1.5;
+        }
+
+        input:focus, textarea:focus {
+            border-color: #3b71ca;
+            box-shadow: 0 0 0 4px rgba(59, 113, 202, 0.1);
+            background: #ffffff;
+        }
+
+        .hint {
+            font-size: 0.75rem;
+            color: #68748e;
+            margin-top: 5px;
+        }
+
+        .btn {
+            background: #1a2536;
+            color: white;
+            border: none;
+            font-weight: 500;
+            padding: 12px 22px;
+            border-radius: 40px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: 0.15s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.02);
+            border: 1px solid #2e3b4e;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background: #1e3c72;
+            border-color: #2a4a82;
+            box-shadow: 0 6px 14px rgba(30, 60, 114, 0.1);
+        }
+
+        .btn-primary:hover {
+            background: #16325c;
+            transform: translateY(-1px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: #1e293b;
+            border: 1.5px solid #d0d9e8;
+            box-shadow: none;
+        }
+
+        .btn-outline:hover {
+            background: #f1f5f9;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .action-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+
+        .result-area {
+            margin-top: 24px;
+            background: #f9fbfd;
+            border-radius: 20px;
+            padding: 1.2rem 1.2rem;
+            border: 1px solid #e9edf4;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .protected-badge {
+            background: #f1e7d6;
+            color: #8e6b2f;
+            padding: 4px 10px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .content-box {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 14px 16px;
+            border: 1px solid #e2e8f0;
+            font-family: 'SF Mono', 'Menlo', 'Monaco', 'Cascadia Code', monospace;
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+            word-break: break-word;
+            max-height: 240px;
+            overflow-y: auto;
+            color: #121826;
+        }
+
+        .empty-content {
+            color: #94a3b8;
+            font-style: italic;
+        }
+
+        .copy-btn {
+            background: none;
+            border: 1px solid #cfddee;
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        .right-col {
+            display: flex;
+            flex-direction: column;
+            gap: 1.8rem;
+        }
+
+        .footer-note {
+            margin-top: 2rem;
+            font-size: 0.8rem;
+            color: #62738a;
+            text-align: center;
+        }
+
+        hr {
+            border: none;
+            border-top: 1px solid #eef2f6;
+            margin: 18px 0 10px;
+        }
+    </style>
 </head>
 <body>
+<div class="container">
+    <!-- 头部 -->
+    <div class="header">
+        <div class="title-section">
+            <h1>
+                📋 云剪贴板
+                <span class="badge">AES-256-GCM</span>
+            </h1>
+            <div style="font-size: 0.9rem; color: #44546f; margin-top: 4px;">安全 · 跨设备 · 密码保护</div>
+        </div>
+        <div class="api-tag">
+            ⚡ API <code>copyapi.zzjjack.us.kg</code>
+        </div>
+    </div>
 
-<!-- 背景层 -->
-<div class="bg-scene">
-  <div class="bg-blob"></div>
-  <div class="bg-blob"></div>
-  <div class="bg-blob"></div>
+    <!-- 全局消息 -->
+    <div id="globalMessage" class="toast-message" style="display: none;">
+        <div class="message-content" id="messageText"></div>
+        <button class="clear-message-btn" onclick="clearMessage()">×</button>
+    </div>
+
+    <!-- 主区域：左边创建卡片，右边获取+删除 -->
+    <div class="cards-grid">
+        <!-- 左侧：创建剪贴板 -->
+        <div class="card">
+            <div class="card-header">
+                <span class="icon-bg">✨</span>
+                <h2>创建新剪贴板</h2>
+            </div>
+            <div class="form-group">
+                <label>📌 名称 <span style="font-weight: normal;">(唯一)</span></label>
+                <input type="text" id="createName" placeholder="例如: 我的笔记 / 工作备忘" maxlength="255" autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label>📝 内容</label>
+                <textarea id="createContent" placeholder="输入要保存的文本 ..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>🔐 密码 (可选 · 加密存储)</label>
+                <input type="password" id="createPassword" placeholder="留空则明文保存" autocomplete="new-password">
+                <div class="hint">若设置密码，内容将使用 AES-256-GCM 加密，服务器不保存密码</div>
+            </div>
+            <div class="action-row">
+                <button class="btn btn-primary" id="createBtn">🚀 创建剪贴板</button>
+                <button class="btn btn-outline" id="clearCreateBtn" type="button">清空</button>
+            </div>
+            <div style="margin-top: 12px; font-size: 0.8rem; color: #557da5;">
+                ⚡ 创建成功后名称全局唯一，不可重复。
+            </div>
+        </div>
+
+        <!-- 右侧两卡片：获取 + 删除 -->
+        <div class="right-col">
+            <!-- 获取剪贴板卡片 -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="icon-bg">🔍</span>
+                    <h2>获取内容</h2>
+                </div>
+                <div class="form-group">
+                    <label>🔖 剪贴板名称</label>
+                    <input type="text" id="getName" placeholder="输入名称" autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label>🔑 密码 (若已加密则必填)</label>
+                    <input type="password" id="getPassword" placeholder="加密剪贴板需密码" autocomplete="off">
+                </div>
+                <button class="btn btn-primary" id="getBtn" style="width: 100%;">📥 获取内容</button>
+
+                <!-- 结果显示区 -->
+                <div class="result-area" id="getResultPanel">
+                    <div class="result-header">
+                        <span style="font-weight: 600; font-size: 0.9rem;">📄 内容预览</span>
+                        <span id="protectedTag" class="protected-badge" style="display: none;">🔒 加密保护</span>
+                    </div>
+                    <div id="contentDisplay" class="content-box empty-content">暂无内容，输入名称后获取</div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 12px;">
+                        <span id="resultName" style="font-size: 0.8rem; color: #3d556b;"></span>
+                        <button id="copyContentBtn" class="copy-btn" disabled>📋 复制</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 删除剪贴板卡片 -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="icon-bg">🗑️</span>
+                    <h2>删除剪贴板</h2>
+                </div>
+                <div class="form-group">
+                    <label>❌ 名称</label>
+                    <input type="text" id="deleteName" placeholder="要删除的名称" autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label>🔐 密码 (加密剪贴板需验证)</label>
+                    <input type="password" id="deletePassword" placeholder="加密剪贴板需要密码">
+                </div>
+                <button class="btn" id="deleteBtn" style="background: #b91c1c; border-color:#a11616; color:white; width:100%;">⚠️ 永久删除</button>
+                <div class="hint" style="margin-top: 12px;">删除后数据不可恢复，加密密钥销毁。</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-note">
+        🔒 端到端加密 · 基于 Cloudflare Workers + D1 · 密码通过 HTTPS 安全传输
+    </div>
 </div>
-<div class="bg-grid"></div>
-<canvas id="particles"></canvas>
-
-<!-- Toast 容器 -->
-<div class="toast-container" id="toastContainer"></div>
-
-<!-- 确认弹窗容器 -->
-<div id="confirmContainer"></div>
-
-<main class="main-wrap">
-  <!-- 页头 -->
-  <header class="page-header">
-    <div class="page-logo"><i class="fa-solid fa-clipboard"></i></div>
-    <h1 class="page-title">Cloud Clipboard</h1>
-    <p class="page-subtitle">端到端加密 · 随存随取 · 即用即走</p>
-  </header>
-
-  <!-- 标签栏 -->
-  <nav class="tab-bar" role="tablist" aria-label="功能切换">
-    <button class="tab-btn active" role="tab" aria-selected="true" data-tab="create" onclick="switchTab('create')">
-      <i class="fa-solid fa-plus"></i> 创建
-    </button>
-    <button class="tab-btn" role="tab" aria-selected="false" data-tab="fetch" onclick="switchTab('fetch')">
-      <i class="fa-solid fa-download"></i> 获取
-    </button>
-    <button class="tab-btn" role="tab" aria-selected="false" data-tab="delete" onclick="switchTab('delete')">
-      <i class="fa-solid fa-trash-can"></i> 删除
-    </button>
-  </nav>
-
-  <!-- 创建面板 -->
-  <section class="panel active" id="panelCreate" role="tabpanel">
-    <div class="card">
-      <h2 class="card-title">创建剪贴板</h2>
-      <p class="card-desc">输入名称和内容，可选设置密码进行 AES-256-GCM 加密存储</p>
-
-      <div class="field">
-        <label class="field-label" for="createName">名称</label>
-        <input class="field-input" type="text" id="createName" placeholder="例如：会议记录" maxlength="255" autocomplete="off">
-      </div>
-
-      <div class="field">
-        <label class="field-label" for="createContent">内容</label>
-        <textarea class="field-input" id="createContent" placeholder="粘贴或输入要保存的文本..." rows="5"></textarea>
-      </div>
-
-      <div class="divider">可选加密</div>
-
-      <div class="field">
-        <label class="field-label" for="createPwd">访问密码</label>
-        <div class="pwd-wrap">
-          <input class="field-input" type="password" id="createPwd" placeholder="留空则明文存储" autocomplete="new-password">
-          <button class="pwd-toggle" type="button" onclick="togglePwd('createPwd', this)" aria-label="切换密码可见性">
-            <i class="fa-solid fa-eye"></i>
-          </button>
-        </div>
-        <div class="encrypt-hint"><i class="fa-solid fa-lock"></i> 设置密码后内容将使用 AES-256-GCM 加密</div>
-      </div>
-
-      <button class="btn-primary" id="btnCreate" onclick="handleCreate()">
-        <span class="spinner"></span>
-        <span class="btn-text"><i class="fa-solid fa-arrow-up-from-bracket"></i> 保存到云端</span>
-      </button>
-
-      <div id="createResult"></div>
-    </div>
-  </section>
-
-  <!-- 获取面板 -->
-  <section class="panel" id="panelFetch" role="tabpanel">
-    <div class="card">
-      <h2 class="card-title">获取内容</h2>
-      <p class="card-desc">输入剪贴板名称，若已加密需同时提供密码</p>
-
-      <div class="field">
-        <label class="field-label" for="fetchName">名称</label>
-        <input class="field-input" type="text" id="fetchName" placeholder="输入要查询的名称" autocomplete="off">
-      </div>
-
-      <div class="field">
-        <label class="field-label" for="fetchPwd">密码</label>
-        <div class="pwd-wrap">
-          <input class="field-input" type="password" id="fetchPwd" placeholder="未加密的剪贴板可留空" autocomplete="off">
-          <button class="pwd-toggle" type="button" onclick="togglePwd('fetchPwd', this)" aria-label="切换密码可见性">
-            <i class="fa-solid fa-eye"></i>
-          </button>
-        </div>
-      </div>
-
-      <button class="btn-primary" id="btnFetch" onclick="handleFetch()">
-        <span class="spinner"></span>
-        <span class="btn-text"><i class="fa-solid fa-magnifying-glass"></i> 查询内容</span>
-      </button>
-
-      <div id="fetchResult"></div>
-    </div>
-  </section>
-
-  <!-- 删除面板 -->
-  <section class="panel" id="panelDelete" role="tabpanel">
-    <div class="card">
-      <h2 class="card-title">删除剪贴板</h2>
-      <p class="card-desc">删除后数据不可恢复，加密剪贴板需验证密码</p>
-
-      <div class="field">
-        <label class="field-label" for="deleteName">名称</label>
-        <input class="field-input" type="text" id="deleteName" placeholder="输入要删除的名称" autocomplete="off">
-      </div>
-
-      <div class="field">
-        <label class="field-label" for="deletePwd">密码</label>
-        <div class="pwd-wrap">
-          <input class="field-input" type="password" id="deletePwd" placeholder="加密剪贴板必须提供密码" autocomplete="off">
-          <button class="pwd-toggle" type="button" onclick="togglePwd('deletePwd', this)" aria-label="切换密码可见性">
-            <i class="fa-solid fa-eye"></i>
-          </button>
-        </div>
-      </div>
-
-      <button class="btn-primary btn-danger" id="btnDelete" onclick="handleDelete()">
-        <span class="spinner"></span>
-        <span class="btn-text"><i class="fa-solid fa-trash-can"></i> 删除</span>
-      </button>
-
-      <div id="deleteResult"></div>
-    </div>
-  </section>
-
-  <!-- 页脚 -->
-  <footer style="text-align:center; margin-top:2.5rem; color:var(--fg-muted); font-size:0.75rem; opacity:0.6;">
-    基于 Cloudflare Workers + D1 构建 · AES-256-GCM 加密
-  </footer>
-</main>
 
 <script>
-// ============ 配置 ============
-const API_BASE = 'https://copyapi.zzjjack.us.kg';
+    (function(){
+        "use strict";
 
-// ============ 粒子背景 ============
-  const canvas = document.getElementById('particles');
-  const ctx = canvas.getContext('2d');
-  let w, h, particles = [];
-  const PARTICLE_COUNT = 40;
+        const API_BASE = 'https://copyapi.zzjjack.us.kg';
 
-  function resize() {
-    w = canvas.width = window.innerWidth;
-    h = canvas.height = window.innerHeight;
-  }
+        // DOM 元素
+        const msgContainer = document.getElementById('globalMessage');
+        const msgText = document.getElementById('messageText');
 
-  function createParticle() {
-    return {
-      x: Math.random() * w,
-      y: Math.random() * h,
-      r: Math.random() * 1.5 + 0.5,
-      vx: (Math.random() - 0.5) * 0.3,
-      vy: (Math.random() - 0.5) * 0.3,
-      alpha: Math.random() * 0.4 + 0.1,
-    };
-  }
+        // 创建相关
+        const createName = document.getElementById('createName');
+        const createContent = document.getElementById('createContent');
+        const createPassword = document.getElementById('createPassword');
+        const createBtn = document.getElementById('createBtn');
+        const clearCreateBtn = document.getElementById('clearCreateBtn');
 
-  function init() {
-    resize();
-    particles = [];
-    for (let i = 0; i < PARTICLE_COUNT; i++) particles.push(createParticle());
-  }
+        // 获取相关
+        const getName = document.getElementById('getName');
+        const getPassword = document.getElementById('getPassword');
+        const getBtn = document.getElementById('getBtn');
+        const contentDisplay = document.getElementById('contentDisplay');
+        const resultNameSpan = document.getElementById('resultName');
+        const protectedTag = document.getElementById('protectedTag');
+        const copyContentBtn = document.getElementById('copyContentBtn');
 
-  function draw() {
-    ctx.clearRect(0, 0, w, h);
-    particles.forEach(p => {
-      p.x += p.vx;
-      p.y += p.vy;
-      if (p.x < 0) p.x = w;
-      if (p.x > w) p.x = 0;
-      if (p.y < 0) p.y = h;
-      if (p.y > h) p.y = 0;
+        // 删除相关
+        const deleteName = document.getElementById('deleteName');
+        const deletePassword = document.getElementById('deletePassword');
+        const deleteBtn = document.getElementById('deleteBtn');
 
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(245, 158, 11, ${p.alpha})`;
-      ctx.fill();
-    });
+        // 当前显示的内容 (用于复制)
+        let currentDisplayedContent = '';
+        let currentDisplayedName = '';
 
-    // 连线
-    for (let i = 0; i < particles.length; i++) {
-      for (let j = i + 1; j < particles.length; j++) {
-        const dx = particles[i].x - particles[j].x;
-        const dy = particles[i].y - particles[j].y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 150) {
-          ctx.beginPath();
-          ctx.moveTo(particles[i].x, particles[i].y);
-          ctx.lineTo(particles[j].x, particles[j].y);
-          ctx.strokeStyle = `rgba(245, 158, 11, ${0.06 * (1 - dist / 150)})`;
-          ctx.lineWidth = 0.5;
-          ctx.stroke();
+        // ---------- 通用消息 ----------
+        function showMessage(text, isError = false) {
+            msgContainer.style.display = 'flex';
+            msgContainer.classList.remove('toast-error', 'toast-success');
+            msgContainer.classList.add(isError ? 'toast-error' : 'toast-success');
+            // 简单图标
+            const icon = isError ? '❌' : '✅';
+            msgText.innerHTML = `${icon} ${text}`;
         }
-      }
-    }
 
-    requestAnimationFrame(draw);
-  }
+        window.clearMessage = function() {
+            msgContainer.style.display = 'none';
+        };
 
-  window.addEventListener('resize', resize);
-  init();
-  draw();
-})();
+        function clearMessageIfSuccess() {
+            // 可由操作触发覆盖
+        }
 
-// ============ Toast 通知系统 ============
-function showToast(message, type = 'info') {
-  const container = document.getElementById('toastContainer');
-  const toast = document.createElement('div');
-  toast.className = `toast ${type}`;
+        // 辅助：禁用按钮状态
+        function setButtonsLoading(disabled, ...btns) {
+            btns.forEach(btn => { if(btn) btn.disabled = disabled; });
+        }
 
-  const icons = { success: 'fa-check-circle', error: 'fa-circle-xmark', info: 'fa-circle-info' };
-  toast.innerHTML = `<i class="fa-solid ${icons[type] || icons.info}"></i><span>${message}</span>`;
+        // ---------- 创建 ----------
+        async function handleCreate() {
+            const name = createName.value.trim();
+            const content = createContent.value;
+            const password = createPassword.value; // 可能为空字符串
 
-  container.appendChild(toast);
+            if (!name) {
+                showMessage('名称不能为空', true);
+                return;
+            }
+            if (!content) {
+                showMessage('内容不能为空', true);
+                return;
+            }
 
-  setTimeout(() => {
-    toast.classList.add('leaving');
-    toast.addEventListener('animationend', () => toast.remove());
-  }, 3500);
-}
+            const payload = { name, content };
+            // 只有密码非空字符串才添加password字段 (空白密码视为无密码)
+            if (password && password.trim() !== '') {
+                payload.password = password;
+            }
 
-// ============ 确认弹窗 ============
-function showConfirm(title, desc) {
-  return new Promise(resolve => {
-    const container = document.getElementById('confirmContainer');
-    container.innerHTML = `
-      <div class="confirm-overlay" id="confirmOverlay">
-        <div class="confirm-box">
-          <div class="confirm-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
-          <div class="confirm-title">${title}</div>
-          <div class="confirm-desc">${desc}</div>
-          <div class="confirm-actions">
-            <button class="btn-cancel" id="confirmCancel">取消</button>
-            <button class="btn-confirm-delete" id="confirmOk">确认删除</button>
-          </div>
-        </div>
-      </div>
-    `;
+            setButtonsLoading(true, createBtn, clearCreateBtn);
+            try {
+                const res = await fetch(`${API_BASE}/api/clipboard`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
 
-    document.getElementById('confirmCancel').onclick = () => {
-      container.innerHTML = '';
-      resolve(false);
-    };
-    document.getElementById('confirmOk').onclick = () => {
-      container.innerHTML = '';
-      resolve(true);
-    };
-    // 点击遮罩关闭
-    document.getElementById('confirmOverlay').onclick = (e) => {
-      if (e.target === e.currentTarget) {
-        container.innerHTML = '';
-        resolve(false);
-      }
-    };
-  });
-}
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.error || `请求失败 (${res.status})`);
+                }
 
-// ============ 标签切换 ============
-function switchTab(tab) {
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    const isActive = btn.dataset.tab === tab;
-    btn.classList.toggle('active', isActive);
-    btn.setAttribute('aria-selected', isActive);
-  });
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  const panelMap = { create: 'panelCreate', fetch: 'panelFetch', delete: 'panelDelete' };
-  const panel = document.getElementById(panelMap[tab]);
-  if (panel) {
-    panel.classList.add('active');
-    // 重新触发动画
-    const card = panel.querySelector('.card');
-    if (card) {
-      card.style.animation = 'none';
-      card.offsetHeight; // 强制回流
-      card.style.animation = '';
-    }
-  }
-}
+                // 成功
+                const protectedStatus = data.protected ? '🔐 已加密' : '📄 明文';
+                showMessage(`✓ 创建成功！ “${data.name}” ${protectedStatus}`, false);
+                
+                // 可选：把名称填入获取框方便测试
+                getName.value = data.name;
+                // 清空密码? 保持灵活性，不自动填充密码。
+                
+                // 不清空内容，但可以保留，用户手动清空
+            } catch (err) {
+                showMessage(`创建失败: ${err.message}`, true);
+            } finally {
+                setButtonsLoading(false, createBtn, clearCreateBtn);
+            }
+        }
 
-// ============ 密码显示切换 ============
-function togglePwd(inputId, btn) {
-  const input = document.getElementById(inputId);
-  const icon = btn.querySelector('i');
-  if (input.type === 'password') {
-    input.type = 'text';
-    icon.className = 'fa-solid fa-eye-slash';
-  } else {
-    input.type = 'password';
-    icon.className = 'fa-solid fa-eye';
-  }
-}
+        function handleClearCreate() {
+            createName.value = '';
+            createContent.value = '';
+            createPassword.value = '';
+            clearMessage();
+        }
 
-// ============ 按钮加载状态 ============
-function setLoading(btnId, loading) {
-  const btn = document.getElementById(btnId);
-  if (loading) {
-    btn.classList.add('loading');
-    btn.disabled = true;
-  } else {
-    btn.classList.remove('loading');
-    btn.disabled = false;
-  }
-}
+        // ---------- 获取 ----------
+        async function handleGet() {
+            const name = getName.value.trim();
+            if (!name) {
+                showMessage('请输入要获取的剪贴板名称', true);
+                return;
+            }
 
-// ============ 创建剪贴板 ============
-async function handleCreate() {
-  const name = document.getElementById('createName').value.trim();
-  const content = document.getElementById('createContent').value.trim();
-  const password = document.getElementById('createPwd').value;
+            const password = getPassword.value;
+            const url = new URL(`${API_BASE}/api/clipboard`);
+            url.searchParams.set('name', name);
+            if (password && password.trim() !== '') {
+                url.searchParams.set('password', password);
+            }
 
-  // 验证
-  if (!name) { showToast('请输入剪贴板名称', 'error'); document.getElementById('createName').focus(); return; }
-  if (!content) { showToast('请输入要保存的内容', 'error'); document.getElementById('createContent').focus(); return; }
+            setButtonsLoading(true, getBtn);
+            // 清空旧结果样式
+            contentDisplay.textContent = '加载中...';
+            resultNameSpan.textContent = '';
+            protectedTag.style.display = 'none';
+            copyContentBtn.disabled = true;
+            currentDisplayedContent = '';
 
-  setLoading('btnCreate', true);
-  const resultDiv = document.getElementById('createResult');
-  resultDiv.innerHTML = '';
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
 
-  try {
-    const payload = { name, content };
-    if (password) payload.password = password;
+                if (!res.ok) {
+                    throw new Error(data.error || `请求失败 ${res.status}`);
+                }
 
-    const res = await fetch(`${API_BASE}/api/clipboard`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
+                // 成功显示
+                const content = data.content || '';
+                currentDisplayedContent = content;
+                currentDisplayedName = data.name;
+                
+                contentDisplay.textContent = content || '(内容为空)';
+                if (!content) contentDisplay.classList.add('empty-content');
+                else contentDisplay.classList.remove('empty-content');
+                
+                resultNameSpan.textContent = `📁 ${data.name}`;
+                if (data.protected) {
+                    protectedTag.style.display = 'inline-block';
+                    protectedTag.textContent = '🔒 已加密保护';
+                } else {
+                    protectedTag.style.display = 'none';
+                }
+                
+                copyContentBtn.disabled = false;
+                showMessage(`获取成功: ${data.name}`, false);
+            } catch (err) {
+                contentDisplay.textContent = `错误: ${err.message}`;
+                contentDisplay.classList.add('empty-content');
+                resultNameSpan.textContent = '';
+                protectedTag.style.display = 'none';
+                copyContentBtn.disabled = true;
+                showMessage(`获取失败: ${err.message}`, true);
+            } finally {
+                setButtonsLoading(false, getBtn);
+            }
+        }
 
-    const data = await res.json();
+        // 复制内容
+        async function handleCopyContent() {
+            if (!currentDisplayedContent) {
+                showMessage('没有可复制的内容', true);
+                return;
+            }
+            try {
+                await navigator.clipboard.writeText(currentDisplayedContent);
+                showMessage(`已复制 “${currentDisplayedName || '内容'}” 到剪贴板`, false);
+            } catch (err) {
+                showMessage('复制失败，请手动复制', true);
+            }
+        }
 
-    if (res.ok) {
-      showToast('剪贴板创建成功', 'success');
-      resultDiv.innerHTML = `
-        <div class="result-box">
-          <div class="result-header">
-            <div class="result-header-left">
-              <i class="fa-solid fa-check"></i> 创建成功
-            </div>
-            <span class="protected-badge ${data.protected ? '' : 'no'}">
-              <i class="fa-solid ${data.protected ? 'fa-lock' : 'fa-lock-open'}"></i>
-              ${data.protected ? '已加密' : '明文'}
-            </span>
-          </div>
-          <div class="result-content" style="font-size:0.85rem; color:var(--fg-muted);">
-            名称「${escapeHtml(data.name)}」已保存至云端${data.protected ? '，请牢记访问密码' : ''}
-          </div>
-        </div>
-      `;
-      // 清空表单
-      document.getElementById('createName').value = '';
-      document.getElementById('createContent').value = '';
-      document.getElementById('createPwd').value = '';
-    } else {
-      showToast(data.error || '创建失败', 'error');
-    }
-  } catch (err) {
-    showToast('网络错误，请检查连接', 'error');
-  } finally {
-    setLoading('btnCreate', false);
-  }
-}
+        // ---------- 删除 ----------
+        async function handleDelete() {
+            const name = deleteName.value.trim();
+            if (!name) {
+                showMessage('请填写要删除的名称', true);
+                return;
+            }
 
-// ============ 获取剪贴板 ============
-async function handleFetch() {
-  const name = document.getElementById('fetchName').value.trim();
-  const password = document.getElementById('fetchPwd').value;
+            // 简单确认
+            if (!confirm(`确定要永久删除剪贴板 “${name}” 吗？此操作无法撤销。`)) {
+                return;
+            }
 
-  if (!name) { showToast('请输入剪贴板名称', 'error'); document.getElementById('fetchName').focus(); return; }
+            const password = deletePassword.value;
+            const url = new URL(`${API_BASE}/api/clipboard`);
+            url.searchParams.set('name', name);
+            if (password && password.trim() !== '') {
+                url.searchParams.set('password', password);
+            }
 
-  setLoading('btnFetch', true);
-  const resultDiv = document.getElementById('fetchResult');
-  resultDiv.innerHTML = '';
+            setButtonsLoading(true, deleteBtn);
+            try {
+                const res = await fetch(url, { method: 'DELETE' });
+                const data = await res.json();
 
-  try {
-    const url = new URL(`${API_BASE}/api/clipboard`);
-    url.searchParams.set('name', name);
-    if (password) url.searchParams.set('password', password);
+                if (!res.ok) {
+                    throw new Error(data.error || `删除失败 (${res.status})`);
+                }
 
-    const res = await fetch(url);
-    const data = await res.json();
+                showMessage(`✅ 已删除 “${data.name || name}”`, false);
+                deleteName.value = '';
+                deletePassword.value = '';
 
-    if (res.ok) {
-      showToast('内容获取成功', 'success');
-      const charCount = data.content.length;
-      const lineCount = data.content.split('\n').length;
+                // 如果当前获取的结果正好是被删除的名称，清空显示
+                if (currentDisplayedName === name) {
+                    contentDisplay.textContent = '暂无内容，输入名称后获取';
+                    contentDisplay.classList.add('empty-content');
+                    resultNameSpan.textContent = '';
+                    protectedTag.style.display = 'none';
+                    copyContentBtn.disabled = true;
+                    currentDisplayedContent = '';
+                }
+            } catch (err) {
+                showMessage(`删除失败: ${err.message}`, true);
+            } finally {
+                setButtonsLoading(false, deleteBtn);
+            }
+        }
 
-      resultDiv.innerHTML = `
-        <div class="result-box">
-          <div class="result-header">
-            <div class="result-header-left">
-              <i class="fa-solid fa-file-lines"></i> ${escapeHtml(data.name)}
-            </div>
-            <div style="display:flex; gap:0.5rem; align-items:center;">
-              <span class="protected-badge ${data.protected ? '' : 'no'}">
-                <i class="fa-solid ${data.protected ? 'fa-lock' : 'fa-lock-open'}"></i>
-                ${data.protected ? '已加密' : '明文'}
-              </span>
-              <button class="result-copy-btn" onclick="copyText(this, '${escapeAttr(data.content)}')">
-                <i class="fa-regular fa-copy"></i> 复制
-              </button>
-            </div>
-          </div>
-          <div class="result-content">${escapeHtml(data.content)}</div>
-          <div class="stat-row">
-            <div class="stat-chip"><i class="fa-solid fa-font"></i> ${charCount} 字符</div>
-            <div class="stat-chip"><i class="fa-solid fa-list"></i> ${lineCount} 行</div>
-          </div>
-        </div>
-      `;
-    } else {
-      // 特殊处理 401 — 提示用户需要密码
-      if (res.status === 401) {
-        showToast('该剪贴板已加密，请输入密码', 'info');
-        document.getElementById('fetchPwd').focus();
-      } else {
-        showToast(data.error || '获取失败', 'error');
-      }
-    }
-  } catch (err) {
-    showToast('网络错误，请检查连接', 'error');
-  } finally {
-    setLoading('btnFetch', false);
-  }
-}
+        // ---------- 绑定事件 ----------
+        createBtn.addEventListener('click', handleCreate);
+        clearCreateBtn.addEventListener('click', handleClearCreate);
+        getBtn.addEventListener('click', handleGet);
+        deleteBtn.addEventListener('click', handleDelete);
+        copyContentBtn.addEventListener('click', handleCopyContent);
 
-// ============ 删除剪贴板 ============
-async function handleDelete() {
-  const name = document.getElementById('deleteName').value.trim();
-  const password = document.getElementById('deletePwd').value;
+        // 额外优化：回车快捷（非必须）
+        getName.addEventListener('keypress', (e) => { if(e.key === 'Enter') { e.preventDefault(); getBtn.click(); } });
+        getPassword.addEventListener('keypress', (e) => { if(e.key === 'Enter') { e.preventDefault(); getBtn.click(); } });
+        createName.addEventListener('keypress', (e) => { if(e.key === 'Enter') { e.preventDefault(); createBtn.click(); } });
+        
+        // 示例预填 (可选, 但不干扰)
+        // 可以给一些示例文本但不强制
+        window.addEventListener('load', () => {
+            // 设置一些占位示例 (但不清空用户自己的)
+            if (createName.value === '') {
+                // 只是展示示例，不自动填充避免误操作，留空。
+            }
+            clearMessage();
+        });
 
-  if (!name) { showToast('请输入剪贴板名称', 'error'); document.getElementById('deleteName').focus(); return; }
+        // 错误边界
+        window.addEventListener('unhandledrejection', (e) => {
+            console.warn('未处理的reject:', e.reason);
+        });
 
-  // 弹出确认
-  const confirmed = await showConfirm(
-    '确认删除',
-    `即将永久删除剪贴板「${escapeHtml(name)}」，此操作不可撤销。`
-  );
-  if (!confirmed) return;
-
-  setLoading('btnDelete', true);
-  const resultDiv = document.getElementById('deleteResult');
-  resultDiv.innerHTML = '';
-
-  try {
-    const url = new URL(`${API_BASE}/api/clipboard`);
-    url.searchParams.set('name', name);
-    if (password) url.searchParams.set('password', password);
-
-    const res = await fetch(url, { method: 'DELETE' });
-    const data = await res.json();
-
-    if (res.ok) {
-      showToast('删除成功', 'success');
-      resultDiv.innerHTML = `
-        <div class="result-box">
-          <div class="result-header">
-            <div class="result-header-left" style="color:var(--success);">
-              <i class="fa-solid fa-check"></i> 已删除
-            </div>
-          </div>
-          <div class="result-content" style="font-size:0.85rem; color:var(--fg-muted);">
-            剪贴板「${escapeHtml(name)}」已从云端永久移除
-          </div>
-        </div>
-      `;
-      document.getElementById('deleteName').value = '';
-      document.getElementById('deletePwd').value = '';
-    } else {
-      if (res.status === 401) {
-        showToast('该剪贴板已加密，请输入密码', 'info');
-        document.getElementById('deletePwd').focus();
-      } else {
-        showToast(data.error || '删除失败', 'error');
-      }
-    }
-  } catch (err) {
-    showToast('网络错误，请检查连接', 'error');
-  } finally {
-    setLoading('btnDelete', false);
-  }
-}
-
-// ============ 复制到剪贴板 ============
-function copyText(btn, text) {
-  // 恢复被转义的文本
-  const decoded = text.replace(/\\n/g, '\n').replace(/\\'/g, "'").replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
-
-  navigator.clipboard.writeText(decoded).then(() => {
-    const original = btn.innerHTML;
-    btn.innerHTML = '<i class="fa-solid fa-check"></i> 已复制';
-    btn.style.color = 'var(--success)';
-    btn.style.borderColor = 'var(--success)';
-    setTimeout(() => {
-      btn.innerHTML = original;
-      btn.style.color = '';
-      btn.style.borderColor = '';
-    }, 1800);
-  }).catch(() => {
-    showToast('复制失败，请手动选择复制', 'error');
-  });
-}
-
-// ============ 工具函数 ============
-function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-}
-
-function escapeAttr(str) {
-  return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/\n/g, '\\n');
-}
-
-// ============ 键盘快捷支持 ============
-document.addEventListener('keydown', (e) => {
-  // 创建面板 Ctrl+Enter 提交
-  if (e.ctrlKey && e.key === 'Enter') {
-    const activePanel = document.querySelector('.panel.active');
-    if (activePanel) {
-      if (activePanel.id === 'panelCreate') handleCreate();
-      else if (activePanel.id === 'panelFetch') handleFetch();
-      else if (activePanel.id === 'panelDelete') handleDelete();
-    }
-  }
-});
-
-// 获取面板回车提交
-document.getElementById('fetchName').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') handleFetch();
-});
-document.getElementById('fetchPwd').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') handleFetch();
-});
-document.getElementById('deleteName').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') handleDelete();
-});
-document.getElementById('deletePwd').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') handleDelete();
-});
+    })();
 </script>
 </body>
 </html>
