@@ -3,18 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>云剪贴板 · 密码保护</title>
-    <!-- 简洁风格，参考 spy.zzjjack.us.kg 的极简设计 -->
+    <title>云剪贴板</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background: #f4f6fa;
@@ -25,14 +19,7 @@
             padding: 1.5rem;
             color: #1e1f2a;
         }
-
-        .container {
-            max-width: 1300px;
-            width: 100%;
-            margin: 0 auto;
-        }
-
-        /* 头部 */
+        .container { max-width: 1300px; width: 100%; margin: 0 auto; }
         .header {
             margin-bottom: 2rem;
             display: flex;
@@ -41,7 +28,6 @@
             flex-wrap: wrap;
             gap: 0.75rem;
         }
-
         .title-section h1 {
             font-weight: 600;
             font-size: 2rem;
@@ -51,7 +37,6 @@
             align-items: center;
             gap: 8px;
         }
-
         .badge {
             background: #e6e9f0;
             padding: 4px 10px;
@@ -61,7 +46,6 @@
             color: #2c3e5c;
             margin-left: 10px;
         }
-
         .api-tag {
             background: #ffffffd0;
             backdrop-filter: blur(4px);
@@ -72,7 +56,6 @@
             border: 1px solid #e2e8f0;
             color: #2c3e5c;
         }
-
         .api-tag code {
             background: #edf2f7;
             padding: 3px 8px;
@@ -81,8 +64,6 @@
             margin-left: 6px;
             color: #0f1825;
         }
-
-        /* 提示条 */
         .toast-message {
             background: #ffffff;
             border-radius: 60px;
@@ -98,283 +79,121 @@
             font-size: 0.95rem;
             transition: all 0.15s;
         }
-
-        .message-content {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .message-content i {
-            font-size: 1.2rem;
-        }
-
-        .toast-error {
-            background: #fff8f8;
-            border-left: 5px solid #e5484d;
-            color: #b91c1c;
-        }
-
-        .toast-success {
-            background: #f2fcf5;
-            border-left: 5px solid #2b9c5c;
-            color: #14643e;
-        }
-
+        .message-content { display: flex; align-items: center; gap: 10px; }
+        .toast-error { background: #fff8f8; border-left: 5px solid #e5484d; color: #b91c1c; }
+        .toast-success { background: #f2fcf5; border-left: 5px solid #2b9c5c; color: #14643e; }
         .clear-message-btn {
-            background: none;
-            border: none;
-            font-size: 1.4rem;
-            cursor: pointer;
-            opacity: 0.5;
-            padding: 0 5px;
-            color: inherit;
+            background: none; border: none; font-size: 1.4rem; cursor: pointer;
+            opacity: 0.5; padding: 0 5px; color: inherit;
         }
-
-        /* 卡片网格 */
         .cards-grid {
             display: grid;
             grid-template-columns: 1.1fr 1fr;
             gap: 1.8rem;
         }
-
         @media (max-width: 800px) {
-            .cards-grid {
-                grid-template-columns: 1fr;
-                gap: 1.5rem;
-            }
+            .cards-grid { grid-template-columns: 1fr; gap: 1.5rem; }
             body { padding: 1rem; }
         }
-
         .card {
             background: #ffffff;
             border-radius: 28px;
             padding: 1.8rem 1.8rem 2rem;
             box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.06), 0 4px 10px rgba(0,0,0,0.02);
             border: 1px solid #f0f3f8;
-            transition: transform 0.2s;
             display: flex;
             flex-direction: column;
         }
-
         .card-header {
             display: flex;
             align-items: center;
             gap: 10px;
             margin-bottom: 1.6rem;
         }
-
-        .card-header h2 {
-            font-weight: 600;
-            font-size: 1.5rem;
-            letter-spacing: -0.02em;
-            color: #151a24;
-        }
-
+        .card-header h2 { font-weight: 600; font-size: 1.5rem; letter-spacing: -0.02em; color: #151a24; }
         .icon-bg {
-            background: #eef3fe;
-            width: 36px;
-            height: 36px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.3rem;
+            background: #eef3fe; width: 36px; height: 36px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center; font-size: 1.3rem;
         }
-
-        .form-group {
-            margin-bottom: 1.25rem;
-        }
-
+        .form-group { margin-bottom: 1.25rem; }
         label {
-            display: block;
-            font-size: 0.85rem;
-            font-weight: 500;
-            margin-bottom: 6px;
-            color: #3a4659;
-            letter-spacing: -0.01em;
+            display: block; font-size: 0.85rem; font-weight: 500;
+            margin-bottom: 6px; color: #3a4659;
         }
-
         input, textarea {
-            width: 100%;
-            padding: 12px 16px;
-            font-family: 'Inter', monospace;
-            font-size: 0.95rem;
-            border: 1.5px solid #e2e8f0;
-            border-radius: 18px;
-            background: #fafcff;
-            transition: border 0.15s, box-shadow 0.15s;
-            outline: none;
-            resize: vertical;
+            width: 100%; padding: 12px 16px; font-family: 'Inter', monospace;
+            font-size: 0.95rem; border: 1.5px solid #e2e8f0; border-radius: 18px;
+            background: #fafcff; transition: border 0.15s, box-shadow 0.15s;
+            outline: none; resize: vertical;
         }
-
-        textarea {
-            min-height: 110px;
-            line-height: 1.5;
-        }
-
+        textarea { min-height: 110px; line-height: 1.5; }
         input:focus, textarea:focus {
-            border-color: #3b71ca;
-            box-shadow: 0 0 0 4px rgba(59, 113, 202, 0.1);
+            border-color: #3b71ca; box-shadow: 0 0 0 4px rgba(59, 113, 202, 0.1);
             background: #ffffff;
         }
-
-        .hint {
-            font-size: 0.75rem;
-            color: #68748e;
-            margin-top: 5px;
-        }
-
+        .hint { font-size: 0.75rem; color: #68748e; margin-top: 5px; }
         .btn {
-            background: #1a2536;
-            color: white;
-            border: none;
-            font-weight: 500;
-            padding: 12px 22px;
-            border-radius: 40px;
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: 0.15s;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.02);
-            border: 1px solid #2e3b4e;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
+            background: #1a2536; color: white; border: none; font-weight: 500;
+            padding: 12px 22px; border-radius: 40px; font-size: 0.95rem;
+            cursor: pointer; transition: 0.15s; box-shadow: 0 4px 8px rgba(0,0,0,0.02);
+            border: 1px solid #2e3b4e; display: inline-flex; align-items: center;
+            justify-content: center; gap: 6px;
         }
-
-        .btn-primary {
-            background: #1e3c72;
-            border-color: #2a4a82;
-            box-shadow: 0 6px 14px rgba(30, 60, 114, 0.1);
-        }
-
-        .btn-primary:hover {
-            background: #16325c;
-            transform: translateY(-1px);
-        }
-
-        .btn-outline {
-            background: transparent;
-            color: #1e293b;
-            border: 1.5px solid #d0d9e8;
-            box-shadow: none;
-        }
-
-        .btn-outline:hover {
-            background: #f1f5f9;
-        }
-
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .action-row {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            margin-top: 8px;
-        }
-
+        .btn-primary { background: #1e3c72; border-color: #2a4a82; }
+        .btn-primary:hover { background: #16325c; transform: translateY(-1px); }
+        .btn-outline { background: transparent; color: #1e293b; border: 1.5px solid #d0d9e8; }
+        .btn-outline:hover { background: #f1f5f9; }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .action-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
         .result-area {
-            margin-top: 24px;
-            background: #f9fbfd;
-            border-radius: 20px;
-            padding: 1.2rem 1.2rem;
-            border: 1px solid #e9edf4;
+            margin-top: 24px; background: #f9fbfd; border-radius: 20px;
+            padding: 1.2rem 1.2rem; border: 1px solid #e9edf4;
         }
-
         .result-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            display: flex; justify-content: space-between; align-items: center;
             margin-bottom: 12px;
         }
-
         .protected-badge {
-            background: #f1e7d6;
-            color: #8e6b2f;
-            padding: 4px 10px;
-            border-radius: 30px;
-            font-size: 0.7rem;
-            font-weight: 600;
+            background: #f1e7d6; color: #8e6b2f; padding: 4px 10px;
+            border-radius: 30px; font-size: 0.7rem; font-weight: 600;
         }
-
         .content-box {
-            background: #ffffff;
-            border-radius: 16px;
-            padding: 14px 16px;
-            border: 1px solid #e2e8f0;
-            font-family: 'SF Mono', 'Menlo', 'Monaco', 'Cascadia Code', monospace;
-            font-size: 0.9rem;
-            white-space: pre-wrap;
-            word-break: break-word;
-            max-height: 240px;
-            overflow-y: auto;
-            color: #121826;
+            background: #ffffff; border-radius: 16px; padding: 14px 16px;
+            border: 1px solid #e2e8f0; font-family: 'SF Mono', 'Menlo', monospace;
+            font-size: 0.9rem; white-space: pre-wrap; word-break: break-word;
+            max-height: 240px; overflow-y: auto; color: #121826;
         }
-
-        .empty-content {
-            color: #94a3b8;
-            font-style: italic;
-        }
-
+        .empty-content { color: #94a3b8; font-style: italic; }
         .copy-btn {
-            background: none;
-            border: 1px solid #cfddee;
-            padding: 6px 14px;
-            border-radius: 30px;
-            font-size: 0.8rem;
-            cursor: pointer;
+            background: none; border: 1px solid #cfddee; padding: 6px 14px;
+            border-radius: 30px; font-size: 0.8rem; cursor: pointer;
         }
-
-        .right-col {
-            display: flex;
-            flex-direction: column;
-            gap: 1.8rem;
+        .right-col { display: flex; flex-direction: column; gap: 1.8rem; }
+        .footer-note { margin-top: 2rem; font-size: 0.8rem; color: #62738a; text-align: center; }
+        .debug-panel {
+            margin-top: 12px; font-size: 0.8rem; color: #4a5c72;
+            background: #edf2f9; padding: 8px 12px; border-radius: 16px;
         }
-
-        .footer-note {
-            margin-top: 2rem;
-            font-size: 0.8rem;
-            color: #62738a;
-            text-align: center;
-        }
-
-        hr {
-            border: none;
-            border-top: 1px solid #eef2f6;
-            margin: 18px 0 10px;
-        }
+        .status-badge { font-family: monospace; }
     </style>
 </head>
 <body>
 <div class="container">
-    <!-- 头部 -->
     <div class="header">
         <div class="title-section">
             <h1>
                 📋 云剪贴板
-                <span class="badge">AES-256-GCM</span>
             </h1>
-            <div style="font-size: 0.9rem; color: #44546f; margin-top: 4px;">安全 · 跨设备 · 密码保护</div>
-        </div>
-        <div class="api-tag">
-            ⚡ API <code>copyapi.zzjjack.us.kg</code>
         </div>
     </div>
 
-    <!-- 全局消息 -->
     <div id="globalMessage" class="toast-message" style="display: none;">
         <div class="message-content" id="messageText"></div>
         <button class="clear-message-btn" onclick="clearMessage()">×</button>
     </div>
 
-    <!-- 主区域：左边创建卡片，右边获取+删除 -->
     <div class="cards-grid">
-        <!-- 左侧：创建剪贴板 -->
+        <!-- 创建卡片 (保持不变) -->
         <div class="card">
             <div class="card-header">
                 <span class="icon-bg">✨</span>
@@ -402,9 +221,8 @@
             </div>
         </div>
 
-        <!-- 右侧两卡片：获取 + 删除 -->
         <div class="right-col">
-            <!-- 获取剪贴板卡片 -->
+            <!-- 获取卡片 (增强错误展示) -->
             <div class="card">
                 <div class="card-header">
                     <span class="icon-bg">🔍</span>
@@ -420,7 +238,6 @@
                 </div>
                 <button class="btn btn-primary" id="getBtn" style="width: 100%;">📥 获取内容</button>
 
-                <!-- 结果显示区 -->
                 <div class="result-area" id="getResultPanel">
                     <div class="result-header">
                         <span style="font-weight: 600; font-size: 0.9rem;">📄 内容预览</span>
@@ -431,10 +248,14 @@
                         <span id="resultName" style="font-size: 0.8rem; color: #3d556b;"></span>
                         <button id="copyContentBtn" class="copy-btn" disabled>📋 复制</button>
                     </div>
+                    <!-- 新增调试信息区域 -->
+                    <div id="debugInfo" class="debug-panel" style="display: none;">
+                        <span>🔎 最后请求详情: <span id="debugText">—</span></span>
+                    </div>
                 </div>
             </div>
 
-            <!-- 删除剪贴板卡片 -->
+            <!-- 删除卡片 -->
             <div class="card">
                 <div class="card-header">
                     <span class="icon-bg">🗑️</span>
@@ -453,7 +274,6 @@
             </div>
         </div>
     </div>
-
     <div class="footer-note">
         🔒 端到端加密 · 基于 Cloudflare Workers + D1 · 密码通过 HTTPS 安全传输
     </div>
@@ -462,21 +282,18 @@
 <script>
     (function(){
         "use strict";
-
         const API_BASE = 'https://copyapi.zzjjack.us.kg';
 
         // DOM 元素
         const msgContainer = document.getElementById('globalMessage');
         const msgText = document.getElementById('messageText');
 
-        // 创建相关
         const createName = document.getElementById('createName');
         const createContent = document.getElementById('createContent');
         const createPassword = document.getElementById('createPassword');
         const createBtn = document.getElementById('createBtn');
         const clearCreateBtn = document.getElementById('clearCreateBtn');
 
-        // 获取相关
         const getName = document.getElementById('getName');
         const getPassword = document.getElementById('getPassword');
         const getBtn = document.getElementById('getBtn');
@@ -484,59 +301,69 @@
         const resultNameSpan = document.getElementById('resultName');
         const protectedTag = document.getElementById('protectedTag');
         const copyContentBtn = document.getElementById('copyContentBtn');
+        const debugInfoDiv = document.getElementById('debugInfo');
+        const debugText = document.getElementById('debugText');
 
-        // 删除相关
         const deleteName = document.getElementById('deleteName');
         const deletePassword = document.getElementById('deletePassword');
         const deleteBtn = document.getElementById('deleteBtn');
+        const testApiBtn = document.getElementById('testApiBtn');
 
-        // 当前显示的内容 (用于复制)
         let currentDisplayedContent = '';
         let currentDisplayedName = '';
 
-        // ---------- 通用消息 ----------
+        // 消息提示
         function showMessage(text, isError = false) {
             msgContainer.style.display = 'flex';
             msgContainer.classList.remove('toast-error', 'toast-success');
             msgContainer.classList.add(isError ? 'toast-error' : 'toast-success');
-            // 简单图标
-            const icon = isError ? '❌' : '✅';
-            msgText.innerHTML = `${icon} ${text}`;
+            msgText.innerHTML = (isError ? '❌ ' : '✅ ') + text;
         }
-
         window.clearMessage = function() {
             msgContainer.style.display = 'none';
         };
 
-        function clearMessageIfSuccess() {
-            // 可由操作触发覆盖
-        }
-
-        // 辅助：禁用按钮状态
         function setButtonsLoading(disabled, ...btns) {
             btns.forEach(btn => { if(btn) btn.disabled = disabled; });
+        }
+
+        // 更新调试信息
+        function setDebugInfo(text) {
+            debugInfoDiv.style.display = 'block';
+            debugText.textContent = text;
+        }
+
+        // ---------- API 测试 ----------
+        async function testApiConnection() {
+            showMessage('正在测试 API 连通性...', false);
+            setDebugInfo('发起 OPTIONS 预检...');
+            try {
+                const res = await fetch(API_BASE + '/api/clipboard?name=__test__', { method: 'OPTIONS' });
+                const status = res.status;
+                const corsOk = res.headers.get('access-control-allow-origin') === '*';
+                if (res.ok || status === 204 || status === 200) {
+                    showMessage(`API 连接正常 (CORS: ${corsOk?'✔️':'❌'})`, false);
+                    setDebugInfo(`OPTIONS 响应 ${status}, CORS 头: ${corsOk ? '已设置' : '缺失'}`);
+                } else {
+                    showMessage(`API 响应异常: ${status}`, true);
+                    setDebugInfo(`状态码 ${status}, 请检查 Worker 部署`);
+                }
+            } catch(e) {
+                showMessage(`网络错误: ${e.message}`, true);
+                setDebugInfo(`请求失败: ${e.message}`);
+            }
         }
 
         // ---------- 创建 ----------
         async function handleCreate() {
             const name = createName.value.trim();
             const content = createContent.value;
-            const password = createPassword.value; // 可能为空字符串
-
-            if (!name) {
-                showMessage('名称不能为空', true);
-                return;
-            }
-            if (!content) {
-                showMessage('内容不能为空', true);
-                return;
-            }
+            const password = createPassword.value;
+            if (!name) { showMessage('名称不能为空', true); return; }
+            if (!content) { showMessage('内容不能为空', true); return; }
 
             const payload = { name, content };
-            // 只有密码非空字符串才添加password字段 (空白密码视为无密码)
-            if (password && password.trim() !== '') {
-                payload.password = password;
-            }
+            if (password && password.trim() !== '') payload.password = password;
 
             setButtonsLoading(true, createBtn, clearCreateBtn);
             try {
@@ -545,21 +372,10 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-
                 const data = await res.json();
-                if (!res.ok) {
-                    throw new Error(data.error || `请求失败 (${res.status})`);
-                }
-
-                // 成功
-                const protectedStatus = data.protected ? '🔐 已加密' : '📄 明文';
-                showMessage(`✓ 创建成功！ “${data.name}” ${protectedStatus}`, false);
-                
-                // 可选：把名称填入获取框方便测试
+                if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+                showMessage(`创建成功！ “${data.name}” ${data.protected?'🔐':'📄'}`, false);
                 getName.value = data.name;
-                // 清空密码? 保持灵活性，不自动填充密码。
-                
-                // 不清空内容，但可以保留，用户手动清空
             } catch (err) {
                 showMessage(`创建失败: ${err.message}`, true);
             } finally {
@@ -574,46 +390,47 @@
             clearMessage();
         }
 
-        // ---------- 获取 ----------
+        // ---------- 获取 (增强错误诊断) ----------
         async function handleGet() {
             const name = getName.value.trim();
-            if (!name) {
-                showMessage('请输入要获取的剪贴板名称', true);
-                return;
-            }
+            if (!name) { showMessage('请输入要获取的剪贴板名称', true); return; }
 
             const password = getPassword.value;
             const url = new URL(`${API_BASE}/api/clipboard`);
             url.searchParams.set('name', name);
-            if (password && password.trim() !== '') {
-                url.searchParams.set('password', password);
-            }
+            if (password && password.trim() !== '') url.searchParams.set('password', password);
 
             setButtonsLoading(true, getBtn);
-            // 清空旧结果样式
             contentDisplay.textContent = '加载中...';
             resultNameSpan.textContent = '';
             protectedTag.style.display = 'none';
             copyContentBtn.disabled = true;
             currentDisplayedContent = '';
+            debugInfoDiv.style.display = 'none';
 
+            const startTime = Date.now();
+            let statusCode = 0;
+            let responseBody = '';
             try {
                 const res = await fetch(url);
-                const data = await res.json();
+                statusCode = res.status;
+                const text = await res.text();
+                responseBody = text;
+                let data;
+                try { data = JSON.parse(text); } catch(e) { data = { error: '响应非JSON: ' + text.substring(0,100) }; }
+
+                const elapsed = Date.now() - startTime;
+                setDebugInfo(`状态 ${statusCode} | 耗时 ${elapsed}ms | ${res.ok ? '成功' : '失败'}`);
 
                 if (!res.ok) {
-                    throw new Error(data.error || `请求失败 ${res.status}`);
+                    const errMsg = data.error || `HTTP ${statusCode}`;
+                    throw new Error(errMsg);
                 }
 
-                // 成功显示
-                const content = data.content || '';
-                currentDisplayedContent = content;
+                currentDisplayedContent = data.content || '';
                 currentDisplayedName = data.name;
-                
-                contentDisplay.textContent = content || '(内容为空)';
-                if (!content) contentDisplay.classList.add('empty-content');
-                else contentDisplay.classList.remove('empty-content');
-                
+                contentDisplay.textContent = currentDisplayedContent || '(内容为空)';
+                contentDisplay.classList.toggle('empty-content', !currentDisplayedContent);
                 resultNameSpan.textContent = `📁 ${data.name}`;
                 if (data.protected) {
                     protectedTag.style.display = 'inline-block';
@@ -621,30 +438,27 @@
                 } else {
                     protectedTag.style.display = 'none';
                 }
-                
                 copyContentBtn.disabled = false;
                 showMessage(`获取成功: ${data.name}`, false);
             } catch (err) {
-                contentDisplay.textContent = `错误: ${err.message}`;
+                contentDisplay.textContent = `❌ 错误: ${err.message}`;
                 contentDisplay.classList.add('empty-content');
                 resultNameSpan.textContent = '';
                 protectedTag.style.display = 'none';
                 copyContentBtn.disabled = true;
                 showMessage(`获取失败: ${err.message}`, true);
+                // 详细调试信息
+                setDebugInfo(`状态 ${statusCode} | 响应: ${responseBody.substring(0,150)}`);
             } finally {
                 setButtonsLoading(false, getBtn);
             }
         }
 
-        // 复制内容
         async function handleCopyContent() {
-            if (!currentDisplayedContent) {
-                showMessage('没有可复制的内容', true);
-                return;
-            }
+            if (!currentDisplayedContent) { showMessage('没有可复制的内容', true); return; }
             try {
                 await navigator.clipboard.writeText(currentDisplayedContent);
-                showMessage(`已复制 “${currentDisplayedName || '内容'}” 到剪贴板`, false);
+                showMessage(`已复制内容`, false);
             } catch (err) {
                 showMessage('复制失败，请手动复制', true);
             }
@@ -653,37 +467,22 @@
         // ---------- 删除 ----------
         async function handleDelete() {
             const name = deleteName.value.trim();
-            if (!name) {
-                showMessage('请填写要删除的名称', true);
-                return;
-            }
-
-            // 简单确认
-            if (!confirm(`确定要永久删除剪贴板 “${name}” 吗？此操作无法撤销。`)) {
-                return;
-            }
+            if (!name) { showMessage('请填写要删除的名称', true); return; }
+            if (!confirm(`确定要永久删除剪贴板 “${name}” 吗？`)) return;
 
             const password = deletePassword.value;
             const url = new URL(`${API_BASE}/api/clipboard`);
             url.searchParams.set('name', name);
-            if (password && password.trim() !== '') {
-                url.searchParams.set('password', password);
-            }
+            if (password && password.trim() !== '') url.searchParams.set('password', password);
 
             setButtonsLoading(true, deleteBtn);
             try {
                 const res = await fetch(url, { method: 'DELETE' });
                 const data = await res.json();
-
-                if (!res.ok) {
-                    throw new Error(data.error || `删除失败 (${res.status})`);
-                }
-
+                if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
                 showMessage(`✅ 已删除 “${data.name || name}”`, false);
                 deleteName.value = '';
                 deletePassword.value = '';
-
-                // 如果当前获取的结果正好是被删除的名称，清空显示
                 if (currentDisplayedName === name) {
                     contentDisplay.textContent = '暂无内容，输入名称后获取';
                     contentDisplay.classList.add('empty-content');
@@ -699,33 +498,23 @@
             }
         }
 
-        // ---------- 绑定事件 ----------
+        // 事件绑定
         createBtn.addEventListener('click', handleCreate);
         clearCreateBtn.addEventListener('click', handleClearCreate);
         getBtn.addEventListener('click', handleGet);
         deleteBtn.addEventListener('click', handleDelete);
         copyContentBtn.addEventListener('click', handleCopyContent);
+        testApiBtn.addEventListener('click', testApiConnection);
 
-        // 额外优化：回车快捷（非必须）
+        // 回车快捷
         getName.addEventListener('keypress', (e) => { if(e.key === 'Enter') { e.preventDefault(); getBtn.click(); } });
         getPassword.addEventListener('keypress', (e) => { if(e.key === 'Enter') { e.preventDefault(); getBtn.click(); } });
         createName.addEventListener('keypress', (e) => { if(e.key === 'Enter') { e.preventDefault(); createBtn.click(); } });
-        
-        // 示例预填 (可选, 但不干扰)
-        // 可以给一些示例文本但不强制
+
         window.addEventListener('load', () => {
-            // 设置一些占位示例 (但不清空用户自己的)
-            if (createName.value === '') {
-                // 只是展示示例，不自动填充避免误操作，留空。
-            }
             clearMessage();
+            debugInfoDiv.style.display = 'none';
         });
-
-        // 错误边界
-        window.addEventListener('unhandledrejection', (e) => {
-            console.warn('未处理的reject:', e.reason);
-        });
-
     })();
 </script>
 </body>
